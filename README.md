@@ -10,14 +10,7 @@
 
 ---
 
-## 👥 Who We Serve
 
-| Persona               | Demographics                   | Goals & Challenges                                                                 |
-|-----------------------|-------------------------------|-----------------------------------------------------------------------------------|
-| Manoj Kumar           | Urban Electrician, Lucknow; Smartphone user; Supports family of 5  | Wants stable jobs, predictable income; exploited by middlemen; needs insurance  |
-| Palak Devi            | Rural Tailor, Himachal; Semi-literate; Shared smartphone           | Seeks better income, recognition; no digital visibility; unaware of welfare      |
-
----
 
 ## 🚀 Our Solution
 
