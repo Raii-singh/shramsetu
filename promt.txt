@@ -1,0 +1,5 @@
+i am building a portal for grey+blue collar jobs , service seekers
+take context from 
+ANTIGRAVITY_BUILD_PROMPT.md and ShramSetu_Architecture.txt
+
+and build a high end website

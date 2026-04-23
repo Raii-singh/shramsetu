@@ -1,0 +1,288 @@
+# ShramSetu – Production Architecture & Tech Stack
+
+## 🧠 Problem Statement
+
+India has over 380 million informal workers (~92% of workforce) who:
+- Lack digital identity and visibility
+- Are exploited by middlemen and underpaid
+- Do not have access to structured pricing
+- Are excluded from welfare schemes and financial systems
+
+As seen in personas like Manoj (urban electrician) and Palak (rural tailor), 
+workers rely on word-of-mouth, cash payments, and lack stability. :contentReference[oaicite:0]{index=0}
+
+## 🎯 Vision
+
+Build a unified digital ecosystem that:
+- Gives workers a verified digital identity
+- Enables direct service booking
+- Standardizes pricing and trust (ratings, reviews)
+- Integrates UPI payments
+- Provides access to loans, insurance, and schemes
+
+## 🚀 Core Differentiation
+
+similer webpages-> urban company, shramin
+
+- Focus on **service delivery marketplace**, not just hiring
+- Workers act as:
+  - Freelancers (gig-based)
+  - Interns (learning + earning)
+  - Full-time professionals (top-tier workers)
+- Financial inclusion layer (loans, benefits)
+- Hybrid online + field agent onboarding model
+
+---
+
+# 🏗️ Tech Stack (Production Level)
+
+## 🖥️ Frontend
+- Framework: Next.js (React + SSR)
+- Styling: Tailwind CSS + ShadCN UI
+- State Management: Zustand / Redux Toolkit
+- Forms: React Hook Form + Zod
+- Maps: Mapbox / Google Maps API
+- Auth UI: Clerk / Firebase Auth
+
+## ⚙️ Backend
+- Runtime: Node.js (TypeScript)
+- Framework: NestJS (preferred) OR Express (simpler start)
+- API: REST (Phase 1) → GraphQL (later scaling)
+- Auth:
+  - JWT + Refresh Tokens
+  - OAuth (Google, Phone OTP)
+- File Uploads: Cloudinary / AWS S3
+- Payment:
+  - Razorpay (UPI, cards)
+  - Stripe (future global)
+
+## 🗄️ Database
+- Primary DB: PostgreSQL
+- ORM: Prisma
+- Cache: Redis (sessions, search caching)
+- Search Engine: Elasticsearch / Meilisearch (for workers)
+
+## 📱 Mobile (Future Phase)
+- React Native / Flutter
+
+## ☁️ DevOps & Infra
+- Hosting: AWS / GCP / Vercel (frontend)
+- Backend: AWS EC2 / ECS / Railway
+- Database: AWS RDS / Supabase
+- CDN: Cloudflare
+- CI/CD: GitHub Actions
+- Monitoring: Prometheus + Grafana / Sentry
+
+---
+
+# 📂 Project Structure (Monorepo Recommended)
+shramsetu/
+│
+├── apps/
+│ ├── web/ # Next.js frontend
+│ ├── admin/ # Admin dashboard
+│ ├── worker-app/ # Worker panel (later mobile)
+│
+├── backend/
+│ ├── src/
+│ │ ├── modules/
+│ │ │ ├── auth/
+│ │ │ ├── users/
+│ │ │ ├── workers/
+│ │ │ ├── services/
+│ │ │ ├── bookings/
+│ │ │ ├── payments/
+│ │ │ ├── reviews/
+│ │ │ ├── pricing/
+│ │ │ ├── loans/
+│ │ │ ├── welfare/ 
+│ │ │
+│ │ ├── common/
+│ │ ├── config/
+│ │ ├── middleware/
+│ │ ├── utils/
+│ │
+│ │ └── main.ts
+│ │
+│ ├── prisma/
+│ │ └── schema.prisma
+│ │
+│ └── tests/
+│
+├── database/
+│ ├── migrations/
+│ ├── seeds/
+│ └── schema.sql
+│
+├── packages/ # shared code
+│ ├── ui/ # reusable components
+│ ├── types/ # shared TS types
+│ ├── config/
+│
+├── infra/
+│ ├── docker/
+│ ├── nginx/
+│ ├── terraform/ # infra as code (optional)
+│
+├── docs/
+│ ├── architecture.md
+│ ├── api-docs.md
+│
+├── .env
+├── docker-compose.yml
+└── README.md
+
+
+
+---
+
+# 🧩 Core Features (Phase-wise)
+
+## 🟢 Phase 1 (MVP - MUST BUILD)
+- Worker profile creation (with verification)
+- Service listing (electrician, plumber, etc.)
+- Location-based search
+- Booking system
+- UPI payments
+- Reviews & ratings
+
+## 🟡 Phase 2
+- Standardized pricing engine
+- Worker analytics dashboard
+- Chat system (client ↔ worker)
+- Multilingual support
+
+## 🔴 Phase 3 (Advanced)
+- Loan integration (NBFC APIs)
+- Insurance & schemes integration
+- Skill certification system
+- AI-based worker ranking
+- Fraud detection
+
+---
+
+# 🗄️ Database Design (High-Level)
+
+## Users Table
+- id
+- name
+- phone
+- role (client / worker / admin)
+
+## Workers Table
+- user_id
+- skills
+- experience
+- verification_status
+- rating
+- location
+
+## Services Table
+- id
+- category
+- base_price
+- description
+
+## Bookings Table
+- id
+- user_id
+- worker_id
+- service_id
+- status
+- payment_status
+
+## Payments Table
+- id
+- booking_id
+- amount
+- method
+- status
+
+## Reviews Table
+- id
+- user_id
+- worker_id
+- rating
+- comment
+
+---
+
+# 🔐 Security Considerations
+
+- Aadhaar/KYC verification (later phase)
+- Rate limiting (DDoS protection)
+- Secure payments (Razorpay webhook validation)
+- Role-based access control (RBAC)
+- Data encryption (at rest + transit)
+
+---
+
+# 📈 Scalability Strategy
+
+- Start monolith → move to microservices later
+- Use Redis caching for search & sessions
+- Introduce queue system (BullMQ / Kafka)
+- CDN for static assets
+
+---
+
+# 🧠 Key Insight (IMPORTANT)
+
+ShramSetu is NOT just:
+- a job portal ❌
+- a freelancer platform ❌
+
+It is:
+👉 Identity Layer + Marketplace + Financial Infra
+
+
+Then expand.
+
+## 🔄 Core User Flow
+
+Client Flow:
+1. Open website
+2. Search service (e.g., electrician)
+3. View nearby workers
+4. Compare profiles (ratings, pricing)
+5. Book service
+6. Pay via UPI
+7. Leave review
+
+Worker Flow:
+1. Sign up via phone OTP
+2. Create profile (skills, pricing, location)
+3. Get verified (manual/agent)
+4. Receive booking requests
+5. Accept/reject job
+6. Complete work
+7. Get paid
+
+## 🔌 API Design (MVP)
+
+Auth:
+POST /auth/signup
+POST /auth/login
+
+Users:
+GET /users/me
+
+Workers:
+POST /workers
+GET /workers?location=&service=
+GET /workers/:id
+
+Services:
+GET /services
+
+Bookings:
+POST /bookings
+GET /bookings/:id
+
+Payments:
+POST /payments/create-order
+POST /payments/verify
+
+Reviews:
+POST /reviews
+GET /workers/:id/reviews
