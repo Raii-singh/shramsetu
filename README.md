@@ -4,7 +4,7 @@ Organizing and empowering India's vast unorganized skilled workforce. Creating s
 
 > **Identity Layer + Marketplace + Financial Infrastructure** for India's 380M+ informal workers.
 
-ShramSetu is a service marketplace (like Urban Company) that connects verified blue/grey-collar professionals with customers for home services — with fair pricing, UPI payments, and financial inclusion.
+ShramSetu is a service marketplace that connects verified blue/grey-collar professionals with customers for home services — with fair pricing, UPI payments, and financial inclusion.
 
 ---
 
