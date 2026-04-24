@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import pool from '../utils/db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 
@@ -18,22 +19,21 @@ router.get('/', async (req: Request, res: Response) => {
       WHERE 1=1
     `;
     const params: any[] = [];
-    let idx = 1;
     if (service) {
-      query += ` AND $${idx} = ANY(w.skills)`;
+      query += ` AND JSON_CONTAINS(w.skills, JSON_QUOTE(?))`;
       params.push(service);
-      idx++;
     }
     if (location) {
-      query += ` AND w.location ILIKE $${idx}`;
+      query += ` AND w.location LIKE ?`;
       params.push(`%${location}%`);
-      idx++;
     }
-    query += ` ORDER BY avg_rating DESC NULLS LAST LIMIT $${idx} OFFSET $${idx + 1}`;
+    query += ` ORDER BY avg_rating DESC LIMIT ? OFFSET ?`;
     params.push(Number(limit), offset);
-    const result = await pool.query(query, params);
-    const countResult = await pool.query(`SELECT COUNT(*) FROM workers w JOIN users u ON u.id = w.user_id WHERE 1=1`);
-    return res.json({ workers: result.rows, total: parseInt(countResult.rows[0].count) });
+
+    const [rows]: any = await pool.query(query, params);
+    const [countRows]: any = await pool.execute(`SELECT COUNT(*) as count FROM workers w JOIN users u ON u.id = w.user_id WHERE 1=1`);
+    
+    return res.json({ workers: rows, total: countRows[0].count });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -44,16 +44,16 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(`
+    const [rows]: any = await pool.execute(`
       SELECT w.*, u.name, u.phone, u.email,
         COALESCE((SELECT AVG(rating) FROM reviews WHERE worker_id = w.id), 0) as avg_rating,
         (SELECT COUNT(*) FROM reviews WHERE worker_id = w.id) as review_count
       FROM workers w
       JOIN users u ON u.id = w.user_id
-      WHERE w.id = $1
+      WHERE w.id = ?
     `, [id]);
-    if (!result.rows[0]) return res.status(404).json({ error: 'Worker not found' });
-    return res.json(result.rows[0]);
+    if (!rows[0]) return res.status(404).json({ error: 'Worker not found' });
+    return res.json(rows[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -65,18 +65,21 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
   const { skills, experience, bio, location, pricing } = req.body;
   const userId = req.user!.id;
   try {
-    const existing = await pool.query('SELECT id FROM workers WHERE user_id = $1', [userId]);
-    if (existing.rows.length > 0) {
+    const [existing]: any = await pool.execute('SELECT id FROM workers WHERE user_id = ?', [userId]);
+    if (existing.length > 0) {
       return res.status(409).json({ error: 'Worker profile already exists' });
     }
-    const result = await pool.query(
-      `INSERT INTO workers (user_id, skills, experience, bio, location, pricing, verification_status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending') RETURNING *`,
-      [userId, skills, experience, bio, location, pricing]
+    const id = uuidv4();
+    await pool.execute(
+      `INSERT INTO workers (id, user_id, skills, experience, bio, location, pricing, verification_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`,
+      [id, userId, JSON.stringify(skills), experience, bio, location, JSON.stringify(pricing)]
     );
     // Update user role to worker
-    await pool.query('UPDATE users SET role = $1 WHERE id = $2', ['worker', userId]);
-    return res.status(201).json(result.rows[0]);
+    await pool.execute('UPDATE users SET role = ? WHERE id = ?', ['worker', userId]);
+    
+    const [newWorker]: any = await pool.execute('SELECT * FROM workers WHERE id = ?', [id]);
+    return res.status(201).json(newWorker[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });
@@ -88,13 +91,14 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   const { skills, experience, bio, location, pricing } = req.body;
   const { id } = req.params;
   try {
-    const result = await pool.query(
-      `UPDATE workers SET skills=$1, experience=$2, bio=$3, location=$4, pricing=$5
-       WHERE id=$6 AND user_id=$7 RETURNING *`,
-      [skills, experience, bio, location, pricing, id, req.user!.id]
+    await pool.execute(
+      `UPDATE workers SET skills=?, experience=?, bio=?, location=?, pricing=?
+       WHERE id=? AND user_id=?`,
+      [JSON.stringify(skills), experience, bio, location, JSON.stringify(pricing), id, req.user!.id]
     );
-    if (!result.rows[0]) return res.status(404).json({ error: 'Not found' });
-    return res.json(result.rows[0]);
+    const [updated]: any = await pool.execute('SELECT * FROM workers WHERE id = ?', [id]);
+    if (!updated[0]) return res.status(404).json({ error: 'Not found' });
+    return res.json(updated[0]);
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: 'Server error' });

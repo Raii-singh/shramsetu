@@ -22,32 +22,31 @@ ShramSetu is a service marketplace (like Urban Company) that connects verified b
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL 14+ (or skip DB — the frontend works in demo mode)
+- Docker & Docker Compose
 
-### 1. Frontend (Next.js)
+### 1. Database (MySQL in Docker)
 
 ```bash
-cd frontend
-npm install
-npm run dev
-# → http://localhost:3000
+docker-compose up -d
+# This starts MySQL and automatically initializes the schema and seed data.
 ```
 
 ### 2. Backend (Express + TypeScript)
 
 ```bash
 cd backend
-cp .env.example .env     # Fill in your DB + Razorpay keys
+npm install
 npm run dev
 # → http://localhost:5000
 ```
 
-### 3. Database (PostgreSQL)
+### 3. Frontend (Next.js)
 
 ```bash
-psql -U postgres -c "CREATE DATABASE shramsetu;"
-psql -U postgres -d shramsetu -f database/schema.sql
-psql -U postgres -d shramsetu -f database/seed.sql
+cd frontend
+npm install
+npm run dev
+# → http://localhost:3000
 ```
 
 ---
@@ -68,7 +67,7 @@ The frontend works **without the backend** using built-in mock data.
 |---|---|
 | Frontend | Next.js 14 + TypeScript + Tailwind CSS |
 | Backend | Node.js + Express + TypeScript |
-| Database | PostgreSQL (raw SQL, no ORM) |
+| Database | MySQL (raw SQL with mysql2/promise) |
 | Auth | JWT (7-day expiry) |
 | Payments | Razorpay (test mode) |
 

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import pool from '../utils/db';
 import { authenticate, AuthRequest } from '../middleware/auth';
 
@@ -20,20 +21,22 @@ router.post('/create-order', authenticate, async (req: AuthRequest, res: Respons
       currency: 'INR',
       receipt: `booking_${booking_id}`,
     });
-    await pool.query(
-      `INSERT INTO payments (booking_id, amount, razorpay_order_id, status)
-       VALUES ($1, $2, $3, 'created')`,
-      [booking_id, amount, order.id]
+    const id = uuidv4();
+    await pool.execute(
+      `INSERT INTO payments (id, booking_id, amount, razorpay_order_id, status)
+       VALUES (?, ?, ?, ?, 'created')`,
+      [id, booking_id, amount, order.id]
     );
     return res.json({ orderId: order.id, amount: order.amount, currency: order.currency });
   } catch (err: any) {
     console.error(err);
     // For demo mode without real Razorpay keys, return a mock order
     const mockOrderId = `order_demo_${Date.now()}`;
-    await pool.query(
-      `INSERT INTO payments (booking_id, amount, razorpay_order_id, status)
-       VALUES ($1, $2, $3, 'created') ON CONFLICT DO NOTHING`,
-      [booking_id, amount, mockOrderId]
+    const id = uuidv4();
+    await pool.execute(
+      `INSERT IGNORE INTO payments (id, booking_id, amount, razorpay_order_id, status)
+       VALUES (?, ?, ?, ?, 'created')`,
+      [id, booking_id, amount, mockOrderId]
     ).catch(() => {});
     return res.json({ orderId: mockOrderId, amount: amount * 100, currency: 'INR', demo: true });
   }
@@ -53,12 +56,12 @@ router.post('/verify', authenticate, async (req: AuthRequest, res: Response) => 
     const isValid = expectedSignature === razorpay_signature || razorpay_order_id.startsWith('order_demo_');
 
     if (isValid) {
-      await pool.query(
-        `UPDATE payments SET status='paid', razorpay_payment_id=$1 WHERE razorpay_order_id=$2`,
+      await pool.execute(
+        `UPDATE payments SET status='paid', razorpay_payment_id=? WHERE razorpay_order_id=?`,
         [razorpay_payment_id || 'demo_pay', razorpay_order_id]
       );
-      await pool.query(
-        `UPDATE bookings SET payment_status='paid', status='confirmed' WHERE id=$1`,
+      await pool.execute(
+        `UPDATE bookings SET payment_status='paid', status='confirmed' WHERE id=?`,
         [booking_id]
       );
       return res.json({ success: true, message: 'Payment verified' });
